@@ -71,7 +71,10 @@ async def query_documents(request: QueryRequest):
             session_id=session_id
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_details = f"Error: {str(e)}\nTraceback: {traceback.format_exc()}"
+        print(error_details)  # Log to console
+        raise HTTPException(status_code=500, detail=error_details)
 
 @app.get("/api/courses", response_model=CourseStats)
 async def get_course_stats():
