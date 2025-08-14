@@ -113,6 +113,95 @@ class CourseSearchTool(Tool):
         
         return "\n\n".join(formatted)
 
+
+class CourseOutlineTool(Tool):
+    """Tool for retrieving course outline information including lessons"""
+    
+    def __init__(self, vector_store: VectorStore):
+        self.store = vector_store
+    
+    def get_tool_definition(self) -> Dict[str, Any]:
+        """Return tool definition for this tool"""
+        return {
+            "name": "get_course_outline",
+            "description": "Get course outline including title, link, and lesson list",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "course_title": {
+                        "type": "string", 
+                        "description": "Course title to get outline for"
+                    }
+                },
+                "required": ["course_title"]
+            }
+        }
+    
+    def execute(self, course_title: str) -> str:
+        """
+        Execute the course outline tool with given parameters.
+        
+        Args:
+            course_title: The title of the course to get outline for
+            
+        Returns:
+            Formatted course outline or error message
+        """
+        try:
+            # Get all courses metadata
+            all_courses = self.store.get_all_courses_metadata()
+            
+            # Find the matching course
+            matching_course = None
+            for course in all_courses:
+                if course.get('title', '').lower() == course_title.lower():
+                    matching_course = course
+                    break
+            
+            # If no exact match, try partial match
+            if not matching_course:
+                for course in all_courses:
+                    if course_title.lower() in course.get('title', '').lower():
+                        matching_course = course
+                        break
+            
+            if not matching_course:
+                return f"No course found matching '{course_title}'"
+            
+            # Format the course outline with better formatting and links
+            title = matching_course.get('title', 'Unknown Course')
+            course_link = matching_course.get('course_link', '#')
+            
+            # Build the response with markdown formatting
+            result = f"# {title}\n\n"
+            if course_link and course_link != '#':
+                result += f"[Course Link]({course_link})\n\n"
+            else:
+                result += "Course Link: Not available\n\n"
+            
+            result += "## Lessons:\n\n"
+            
+            lessons = matching_course.get('lessons', [])
+            if lessons:
+                for lesson in lessons:
+                    lesson_num = lesson.get('lesson_number', 'N/A')
+                    lesson_title = lesson.get('lesson_title', 'Untitled Lesson')
+                    # Try to get lesson link
+                    lesson_link = self.store.get_lesson_link(title, lesson_num)
+                    
+                    if lesson_link:
+                        result += f"{lesson_num}. [{lesson_title}]({lesson_link})\n"
+                    else:
+                        result += f"{lesson_num}. {lesson_title}\n"
+            else:
+                result += "No lessons available\n"
+            
+            return result.strip()
+            
+        except Exception as e:
+            return f"Error retrieving course outline: {str(e)}"
+
+
 class ToolManager:
     """Manages available tools for the AI"""
     

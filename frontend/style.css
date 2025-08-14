@@ -107,6 +107,16 @@ header h1 {
     margin-bottom: 1.5rem;
 }
 
+/* Additional spacing for specific sections */
+.sidebar-section:nth-child(2) {
+    margin-bottom: 2.5rem;
+}
+
+/* Additional spacing below System Architecture */
+.sidebar-section:nth-child(3) {
+    margin-bottom: 2.5rem;
+}
+
 .sidebar-section:last-child {
     margin-bottom: 0;
 }
